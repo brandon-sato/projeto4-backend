@@ -1,7 +1,8 @@
 import express from "express";
 import { connectToDb } from "./database/sequelize";
 import { User } from "./models/users";
-import { createUser, deleteUser, findUserById, listAllUsers, loginUser, updateUser } from "./controllers/user";
+import { createUser, deleteUser, findUserById, listAllUsers, updateUser } from "./controllers/user";
+import { login } from "./controllers/auth";
 import dotenv from "dotenv"
 
 dotenv.config()
@@ -16,7 +17,7 @@ connectToDb()
 });
 
 app.post("/users", createUser); // C
-app.post("/users/login", loginUser);
+app.post("/users/login", login);
 app.get("/users", listAllUsers);  // R
 app.get("/users/:id", findUserById);
 app.put("/users/:id", updateUser); // U

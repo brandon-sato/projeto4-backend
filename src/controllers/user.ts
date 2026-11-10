@@ -1,36 +1,11 @@
-import { createHash, timingSafeEqual } from "crypto";
+import bcrypt = require("bcrypt");
 import { Request, Response } from "express";
 import { User } from "../models/users";
 
-function hashPassword(password: string): string {
-    return createHash("sha256").update(password, "utf8").digest("hex");
-}
+const BCRYPT_ROUNDS = 10;
 
-export async function loginUser(req: Request, res: Response) {
-    const { email, password } = req.body;
-
-    if (typeof email !== "string" || typeof password !== "string") {
-        return res.status(400).json({ message: "E-mail e senha são obrigatórios." });
-    }
-
-    const user = await User.findOne({ where: { email } });
-    if (!user || !/^[a-f0-9]{64}$/i.test(user.password)) {
-        return res.status(401).json({ message: "E-mail ou senha inválidos." });
-    }
-
-    const submittedHash = Buffer.from(hashPassword(password), "hex");
-    const storedHash = Buffer.from(user.password, "hex");
-    if (!timingSafeEqual(submittedHash, storedHash)) {
-        return res.status(401).json({ message: "E-mail ou senha inválidos." });
-    }
-
-    return res.json({
-        user: {
-            id: user.id,
-            name: user.name,
-            email: user.email
-        }
-    });
+async function hashPassword(password: string): Promise<string> {
+    return bcrypt.hash(password, BCRYPT_ROUNDS);
 }
 
 export async function createUser(req: Request, res: Response) {
@@ -45,11 +20,15 @@ export async function createUser(req: Request, res: Response) {
         return res.status(400).json({ message: "Dados de cadastro inválidos." });
     }
 
+    if (Buffer.byteLength(data.password, "utf8") > 72) {
+        return res.status(400).json({ message: "A senha deve ter no máximo 72 bytes." });
+    }
+
     const newUser = User.build({
         name: data.name,
         email: data.email,
         cpf: data.cpf,
-        password: hashPassword(data.password)
+        password: await hashPassword(data.password)
     });
 
     const validationErrors = newUser.validateUserData();
@@ -100,10 +79,18 @@ export async function updateUser(req: Request, res: Response) {
         return res.status(404).json({ message: "Usuário não encontrado." })
     }
 
+    if (typeof data?.password !== "string") {
+        return res.status(400).json({ message: "Dados de cadastro inválidos." });
+    }
+
+    if (Buffer.byteLength(data.password, "utf8") > 72) {
+        return res.status(400).json({ message: "A senha deve ter no máximo 72 bytes." });
+    }
+
     user.name = data.name;
     user.email = data.email;
     user.cpf = data.cpf;
-    user.password = hashPassword(data.password);
+    user.password = await hashPassword(data.password);
 
     const validationErrors = user.validateUserData();
     if (validationErrors.length > 0) {
