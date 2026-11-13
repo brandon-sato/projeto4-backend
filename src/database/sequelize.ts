@@ -12,7 +12,7 @@ export const sequelize = new Sequelize({
     host: process.env.MYSQL_HOST!
 });
 
-export async function connectToDb() {
+export async function connectToDb() {2
     try {
         await sequelize.authenticate();
     
@@ -20,8 +20,8 @@ export async function connectToDb() {
     
         await sequelize.sync();
     
-        console.log("Tabelas criadas com sucesso!")
     }catch (err) {
         console.error(err)
+        console.log("")
     }
 }
