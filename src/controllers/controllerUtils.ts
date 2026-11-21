@@ -10,31 +10,26 @@ export type RequestData = Record<string, unknown>;
 type AsyncController = (req: Request, res: Response) => Promise<void>;
 
 export function withErrorHandling(controller: AsyncController): RequestHandler {
-    return async (req: Request, res: Response, next: NextFunction) => {
+    return async (req, res, next) => {
         try {
             await controller(req, res);
         } catch (error) {
             console.error("Erro ao acessar o banco de dados:", error);
-
             if (res.headersSent) {
                 return next(error);
             }
-
             if (error instanceof UniqueConstraintError) {
                 res.status(409).json({ message: "Já existe um registro com esses dados." });
                 return;
             }
-
             if (error instanceof ForeignKeyConstraintError) {
                 res.status(409).json({ message: "O registro está relacionado a outros dados." });
                 return;
             }
-
             if (error instanceof ValidationError) {
                 res.status(400).json({ message: "Dados inválidos." });
                 return;
             }
-
             res.status(500).json({ message: "Erro interno no servidor." });
         }
     };
