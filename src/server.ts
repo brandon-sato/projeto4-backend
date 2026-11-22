@@ -53,6 +53,7 @@ import {
     findProcedureProfessional,
     listAllProcedureProfessionals
 } from "./controllers/procedureProfessional";
+import { getDashboard } from "./controllers/dashboard";
 
 dotenv.config()
 
@@ -72,6 +73,7 @@ app.post("/users/login", login);
 
 app.use(authMiddleware);
 
+app.get("/dashboard", getDashboard);
 
 app.get("/users", listAllUsers);  // R
 app.get("/users/:id", findUserById);
