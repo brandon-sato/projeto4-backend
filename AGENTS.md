@@ -11,6 +11,12 @@
 - Copy `.env.example` to `.env`; required vars: `MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_USERNAME`, `MYSQL_PASSWORD`, `MYSQL_DATABASE`, `SERVER_PORT`, `JWT_SECRET`.
 - `src/database/sequelize.ts` and `src/server.ts` both call `dotenv.config()`. MySQL connection uses the `MYSQL_*` vars; server listens on `SERVER_PORT`.
 - Startup flow: `initializeAssociations()` -> `connectToDb()` -> `app.listen(...)`. `connectToDb()` runs `sequelize.authenticate()` and `sequelize.sync()`; model changes can affect the DB schema on startup.
+- Never open, read, search, print, copy, modify, or delete a real `.env` file. Use `.env.example` and variable names when working with configuration. Do not expose environment values in command output or logs.
+
+## Destructive database operations
+- Before dropping or deleting a database table, truncating it, or applying a schema change that can delete existing data, stop and ask the user to confirm the exact database, table, and operation.
+- Proceed only after explicit confirmation for that specific operation. A general request to modify the database is not confirmation to delete data.
+- For application-level record deletion, retain the existing confirmation prompt shown to the user before the delete request.
 
 ## Architecture
 - Entrypoint: `src/server.ts` registers all Express routes and middleware; there are no separate router modules.
