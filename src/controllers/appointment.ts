@@ -11,14 +11,12 @@ import { Professional } from "../models/professionals";
 type AppointmentData = Record<string, unknown> & {
     id_cliente: number;
     id_profissional: number;
-    data_atendimento: string;
     valor: number;
 };
 
 function isValidAppointmentData(data: Record<string, unknown>): data is AppointmentData {
     return typeof data.id_cliente === "number"
         && typeof data.id_profissional === "number"
-        && typeof data.data_atendimento === "string"
         && typeof data.valor === "number";
 }
 
@@ -32,7 +30,7 @@ export const createAppointment = withErrorHandling(async (req: Request, res: Res
     const appointment = Appointment.build({
         id_cliente: data.id_cliente,
         id_profissional: data.id_profissional,
-        data_atendimento: new Date(data.data_atendimento),
+        data_atendimento: new Date(),
         valor: data.valor
     });
     const validationErrors = appointment.validateAppointmentData();
@@ -99,7 +97,7 @@ export const updateAppointment = withErrorHandling(async (req: Request, res: Res
 
     appointment.id_cliente = data.id_cliente;
     appointment.id_profissional = data.id_profissional;
-    appointment.data_atendimento = new Date(data.data_atendimento);
+    appointment.data_atendimento = new Date();
     appointment.valor = data.valor;
     const validationErrors = appointment.validateAppointmentData();
     if (validationErrors.length > 0) {

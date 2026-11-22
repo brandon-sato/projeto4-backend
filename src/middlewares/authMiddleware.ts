@@ -20,7 +20,8 @@ export async function authMiddleware(
     try {
         const JWT_SECRET = process.env.JWT_SECRET!
 
-        verify(token, JWT_SECRET, { algorithms: ["HS256"] })
+        const payload = verify(token, JWT_SECRET, { algorithms: ["HS256"] })
+        res.locals.authUser = payload
 
         return next();
     } catch {

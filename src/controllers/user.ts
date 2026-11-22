@@ -72,8 +72,14 @@ export async function findUserById(req: Request, res: Response) {
 export async function updateUser(req: Request, res: Response) {
     const data = req.body;
     const params = req.params;
+    const id = Number(params.id);
+    const authenticatedUserId = Number(res.locals.authUser?.id);
 
-    const user = await User.findByPk(Number(params.id));
+    if (!Number.isInteger(id) || authenticatedUserId !== id) {
+        return res.status(403).json({ message: "Você só pode editar o seu próprio usuário." });
+    }
+
+    const user = await User.findByPk(id);
 
     if (!user) {
         return res.status(404).json({ message: "Usuário não encontrado." })
@@ -108,6 +114,11 @@ export async function updateUser(req: Request, res: Response) {
 export async function deleteUser(req: Request, res: Response) {
     const params = req.params;
     const id = Number(params.id);
+    const authenticatedUserId = Number(res.locals.authUser?.id);
+
+    if (!Number.isInteger(id) || authenticatedUserId !== id) {
+        return res.status(403).json({ message: "Você só pode excluir o seu próprio usuário." });
+    }
 
     const user = await User.findByPk(id);
 
