@@ -14,7 +14,7 @@ export async function login(req: Request, res: Response) {
         return res.status(401).json({ message: "E-mail ou senha inválidos." });
     }
 
-    const user = await User.findOne({ where: { email } });
+    const user = await User.findOne({ where: { email: email.trim().toLowerCase() } });
     if (!user || !await bcrypt.compare(password, user.password)) {
         return res.status(401).json({ message: "E-mail ou senha inválidos." });
     }

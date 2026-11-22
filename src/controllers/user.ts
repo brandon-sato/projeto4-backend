@@ -1,8 +1,16 @@
 import bcrypt = require("bcrypt");
 import { Request, Response } from "express";
+import { UniqueConstraintError } from "sequelize";
 import { User } from "../models/users";
 
 const BCRYPT_ROUNDS = 10;
+const DUPLICATE_EMAIL_MESSAGE = "Este e-mail já está cadastrado.";
+
+function isDuplicateEmailError(error: unknown): boolean {
+    return error instanceof UniqueConstraintError
+        && (Object.prototype.hasOwnProperty.call(error.fields, "email")
+            || error.errors.some((validationError) => validationError.path === "email"));
+}
 
 async function hashPassword(password: string): Promise<string> {
     return bcrypt.hash(password, BCRYPT_ROUNDS);
@@ -26,9 +34,9 @@ export async function createUser(req: Request, res: Response) {
 
     const newUser = User.build({
         name: data.name,
-        email: data.email,
+        email: data.email.trim().toLowerCase(),
         cpf: data.cpf,
-        password: await hashPassword(data.password)
+        password: data.password
     });
 
     const validationErrors = newUser.validateUserData();
@@ -39,7 +47,21 @@ export async function createUser(req: Request, res: Response) {
         });
     }
 
-    await newUser.save();
+    const existingUser = await User.findOne({ where: { email: newUser.email } });
+    if (existingUser) {
+        return res.status(409).json({ message: DUPLICATE_EMAIL_MESSAGE });
+    }
+
+    newUser.password = await hashPassword(data.password);
+    try {
+        await newUser.save();
+    } catch (error: unknown) {
+        if (isDuplicateEmailError(error)) {
+            return res.status(409).json({ message: DUPLICATE_EMAIL_MESSAGE });
+        }
+        throw error;
+    }
+
     return res.status(201).json({
         id: newUser.id,
         name: newUser.name,
@@ -94,9 +116,12 @@ export async function updateUser(req: Request, res: Response) {
     }
 
     user.name = data.name;
-    user.email = data.email;
+    if (typeof data?.email !== "string") {
+        return res.status(400).json({ message: "Dados de cadastro inválidos." });
+    }
+
+    user.email = data.email.trim().toLowerCase();
     user.cpf = data.cpf;
-    user.password = await hashPassword(data.password);
 
     const validationErrors = user.validateUserData();
     if (validationErrors.length > 0) {
@@ -106,7 +131,20 @@ export async function updateUser(req: Request, res: Response) {
         });
     }
 
-    await user.save();
+    const existingUser = await User.findOne({ where: { email: user.email } });
+    if (existingUser && existingUser.id !== user.id) {
+        return res.status(409).json({ message: DUPLICATE_EMAIL_MESSAGE });
+    }
+
+    user.password = await hashPassword(data.password);
+    try {
+        await user.save();
+    } catch (error: unknown) {
+        if (isDuplicateEmailError(error)) {
+            return res.status(409).json({ message: DUPLICATE_EMAIL_MESSAGE });
+        }
+        throw error;
+    }
 
     return res.json(user);
 }

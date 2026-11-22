@@ -1,6 +1,5 @@
 import express from "express";
 import { connectToDb } from "./database/sequelize";
-import { User } from "./models/users";
 import { createUser, deleteUser, findUserById, listAllUsers, updateUser } from "./controllers/user";
 import { login } from "./controllers/auth";
 import dotenv from "dotenv"
@@ -63,11 +62,6 @@ app.use(express.json());
 
 initializeAssociations();
 
-connectToDb()
-.then(()=> {
-    new User();
-});
-
 app.post("/users", createUser); // C
 app.post("/users/login", login);
 
@@ -120,6 +114,13 @@ app.get("/procedure-professionals/:idProcedimento/:idProfissional", findProcedur
 app.post("/procedure-professionals", createProcedureProfessional);
 app.delete("/procedure-professionals/:idProcedimento/:idProfissional", deleteProcedureProfessional);
 
-app.listen(Number(process.env.SERVER_PORT!), () => {
-    console.log("Iniciando servidor!");
+connectToDb()
+    .then(() => {
+        app.listen(Number(process.env.SERVER_PORT!), () => {
+            console.log("Iniciando servidor!");
+        });
+    })
+    .catch((error: unknown) => {
+        console.error("Não foi possível iniciar o servidor.", error);
+        process.exit(1);
 })
